@@ -71,9 +71,10 @@ def get_swag_json(
     username: Optional[str] = None,
     password: Optional[str] = None,
     swagger_file: str = "",
+    password: Optional[str] = None,
     proxies: Optional[dict] = None,
 ) -> Dict:
-    tot_url = url + swagger_file
+    tot_url = swagger_file
     response = request_call(
         url=tot_url, token=token, username=username, password=password, proxies=proxies
     )

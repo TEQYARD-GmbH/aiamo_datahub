@@ -50,7 +50,7 @@ class OpenApiConfig(ConfigModel):
     name: str = Field(description="Name of ingestion.")
     url: str = Field(description="Endpoint URL. e.g. https://example.com")
     swagger_file: str = Field(
-        description="Route for access to the swagger file. e.g. openapi.json"
+        description="URL for accessing the swagger file. e.g. https://example.com/openapi.json, alternatively a path like openapi.json, then it takes the url above as default + the specified path"
     )
     ignore_endpoints: list = Field(
         default=[], description="List of endpoints to ignore during ingestion."
