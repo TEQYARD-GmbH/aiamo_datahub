@@ -1,0 +1,73 @@
+name: Deploy AIAMO DataHub Fork
+
+on:
+  workflow_dispatch: # Allows the action to be triggered manually
+
+# Uncomment the following lines to trigger on pushes to the main branch
+#  push:
+#    branches:
+#      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for the repository (needed for tags)
+
+    - name: Fetch git tags from upstream (datahub)
+      run: |
+        git fetch upstream --tags --force --verbose
+
+    - name: Remove previous build artifacts
+      run: |
+        rm -f ./metadata-service/war/build/libs/war.war
+        rm -f ./war.war
+        rm -f ./datahub-frontend.zip
+        rm -f ./datahub-frontend/build/distributions/datahub-frontend-*.zip
+
+    - name: Build WAR file
+      run: |
+        ./gradlew :metadata-service:war:build -x test --parallel
+
+    - name: Build ZIP file
+      run: |
+        ./gradlew :datahub-frontend:dist -x test -x yarnTest -x yarnLint --parallel
+
+    - name: Move WAR and ZIP files
+      run: |
+        mv ./metadata-service/war/build/libs/war.war ./war.war
+        mv ./datahub-frontend/build/distributions/datahub-frontend-*.zip ./datahub-frontend.zip
+
+    - name: Build Docker image for GMS
+      run: |
+        docker build -f ./docker/datahub-gms/Dockerfile -t teqyard/aiamo-datahub-gms:head .
+
+    - name: Build Docker image for frontend
+      run: |
+        docker build -f ./docker/datahub-frontend/Dockerfile -t teqyard/aiamo-datahub-frontend-react:head .
+
+    - name: (Optional) Push Docker images to GitHub Container Registry
+      if: false  # Change to 'true' to enable
+      run: |
+        echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+        docker tag teqyard/aiamo-datahub-gms:head ghcr.io/${{ github.repository_owner }}/aiamo-datahub-gms:head
+        docker tag teqyard/aiamo-datahub-frontend-react:head ghcr.io/${{ github.repository_owner }}/aiamo-datahub-frontend-react:head
+        docker push ghcr.io/${{ github.repository_owner }}/aiamo-datahub-gms:head
+        docker push ghcr.io/${{ github.repository_owner }}/aiamo-datahub-frontend-react:head
+
+    - name: Pull Official DataHub Docker Images
+      run: |
+        docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml pull
+
+    - name: Run Docker Compose
+      run: |
+        docker compose -p datahub -f docker/docker-compose.aiamo.yml -f docker/docker-compose.override.yml up -d
+
+    - name: Clean up build files
+      run: |
+        rm -f ./war.war
+        rm -f ./datahub-frontend.zip
