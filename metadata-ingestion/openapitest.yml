@@ -1,0 +1,10 @@
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"
+source:
+  type: openapi
+  config:
+    name: "My OpenAPI Source"
+    swagger_file: "http://integrationszone-mock-api.s3-website.eu-north-1.amazonaws.com/books_openapi.json"
+    url: "https://ot11l24sdi.execute-api.eu-north-1.amazonaws.com"
