@@ -1,0 +1,27 @@
+name: SBOM Analysis
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+#
+#      - name: Run Anchore SBOM Action on Source
+#        uses: anchore/sbom-action@v0
+#        with: 
+#          format: spdx-json
+
+      - name: Build and tag container
+        run: docker build -t teqyard/aiamo-datahub .
+
+      - name: Run Anchore SBOM Action on Container
+        uses: anchore/sbom-action@v0
+        with:
+           image: teqyard/aiamo-datahub
+           format: spdx-json
+           
